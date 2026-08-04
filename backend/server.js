@@ -21,6 +21,9 @@ const auctionRoutes = require('./routes/auctions');
 const bidRoutes = require('./routes/bids');
 const paymentRoutes = require('./routes/payments');
 const imageRoutes = require('./routes/images');
+const chatRoutes = require('./routes/chat');
+const recommendationRoutes = require('./routes/recommendations');
+const predictionRoutes = require('./routes/predictions');
 
 const app = express();
 const server = createServer(app);
@@ -55,6 +58,8 @@ require('./models/Auction');
 require('./models/Bid');
 require('./models/Seller');
 require('./models/Transaction');
+require('./models/ChatSession');
+require('./models/UserActivity');
 
 // Connect to MongoDB Atlas directly using the connectDB function
 connectDB();
@@ -163,6 +168,9 @@ app.use('/api/auctions', auctionRoutes);
 app.use('/api/bids', bidRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/predictions', predictionRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

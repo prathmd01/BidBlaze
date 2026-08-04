@@ -34,6 +34,8 @@ import { useSocket } from "@/contexts/SocketContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useScrollToTop } from "@/hooks/useScrollToTop";
 import PaymentModal from "@/components/PaymentModal";
+import PricePrediction from "@/components/ai/PricePrediction";
+import api from "@/lib/api";
 
 // Form schema
 const bidFormSchema = z.object({
@@ -88,6 +90,7 @@ const MakeBid = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isAuctionEnded, setIsAuctionEnded] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
+  const [predictionRefresh, setPredictionRefresh] = useState(0);
   // Scroll to top when page loads
   useScrollToTop();
 
@@ -178,6 +181,11 @@ const MakeBid = () => {
           setCurrentAuction(normalized);
           // set default bid amount
           form.setValue('bidAmount', String(normalized.currentBid + normalized.incrementAmount));
+
+          // Track view for AI recommendations (logged-in users only)
+          if (user?.id) {
+            api.post('/recommendations/track-view', { auctionId: a._id }).catch(() => {});
+          }
         } else {
           toast.error("Auction not found");
           navigate("/auctions");
@@ -190,7 +198,7 @@ const MakeBid = () => {
       }
     };
     fetchAuction();
-  }, [auctionId, navigate, form]);
+  }, [auctionId, navigate, form, user?.id]);
 
   // Join auction room for real-time updates
   useEffect(() => {
@@ -228,6 +236,7 @@ const MakeBid = () => {
         }
 
         toast.success(`New bid: ${formatRupees(data.newBid)} by ${data.bidderName}`);
+        setPredictionRefresh((k) => k + 1);
 
         // Check if auction has ended and if current user is the winner
         checkAuctionStatus();
@@ -601,6 +610,14 @@ const MakeBid = () => {
                       {displayAuction.bids} bids • Min. increment: {formatRupees(auction.incrementAmount)}
                     </p>
                   </div>
+
+                  {auctionId && displayAuction && (
+                    <PricePrediction
+                      auctionId={auctionId}
+                      currentBid={displayAuction.currentBid}
+                      refreshKey={predictionRefresh}
+                    />
+                  )}
 
                   {/* Time Remaining */}
                   <div className="space-y-2">

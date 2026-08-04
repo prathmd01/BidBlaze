@@ -24,6 +24,7 @@ import ProfileEdit from "./pages/ProfileEdit";
 import WebSocketTest from "./pages/WebSocketTest";
 import EditAuction from "./pages/EditAuction";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import ChatBot from "@/components/ai/ChatBot";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ChatBot />
           </BrowserRouter>
         </TooltipProvider>
         </SocketProvider>
