@@ -28,8 +28,8 @@ const predictionRoutes = require('./routes/predictions');
 const app = express();
 const server = createServer(app);
 
-// CORS configuration
-const allowedOrigins = Array.from(new Set([
+// 1. CORS configuration & manual preflight handler
+const allowedOrigins = [
   'https://bidblaze-2026.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
@@ -37,30 +37,51 @@ const allowedOrigins = Array.from(new Set([
   ...(process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map((o) => o.trim().replace(/\/$/, ''))
     : [])
-].filter(Boolean)));
+].filter(Boolean);
+
+app.use((req, res, next) => {
+  const reqOrigin = req.headers.origin;
+  if (reqOrigin && allowedOrigins.some((o) => o.replace(/\/$/, '') === reqOrigin.replace(/\/$/, ''))) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+  } else if (!reqOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', 'https://bidblaze-2026.vercel.app');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept,Origin,X-CSRF-Token,Accept-Version,Content-Length,Content-MD5,Date,X-Api-Version');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     const cleanOrigin = origin.trim().replace(/\/$/, '');
-    if (allowedOrigins.includes(cleanOrigin)) {
+    if (allowedOrigins.some((allowed) => allowed.replace(/\/$/, '') === cleanOrigin)) {
       return callback(null, true);
     }
     return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-CSRF-Token', 'Accept-Version', 'Content-Length', 'Content-MD5', 'Date', 'X-Api-Version'],
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Security middleware
+// 2. Health check route (BEFORE rateLimit, body parsing, and DB)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// 3. Security middleware & Rate limiting
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -68,11 +89,11 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Body parsing middleware
+// 4. Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Import the connectDB function from the mongodb.js file
+// 5. Database connection setup
 const connectDB = require('./lib/mongodb');
 
 // Import models to ensure they are registered with Mongoose
@@ -84,13 +105,9 @@ require('./models/Transaction');
 require('./models/ChatSession');
 require('./models/UserActivity');
 
-// Connect to MongoDB Atlas directly using the connectDB function
-connectDB();
-
 // Database connection middleware for serverless requests
 app.use(async (req, res, next) => {
-  // Skip DB connection for health check
-  if (req.path === '/api/health') {
+  if (req.method === 'OPTIONS' || req.path === '/api/health') {
     return next();
   }
   try {
@@ -212,11 +229,6 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/predictions', predictionRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
