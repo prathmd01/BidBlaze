@@ -1,31 +1,43 @@
 // Import the mongoose library, which is an Object Data Modeling (ODM) library for MongoDB and Node.js.
 const mongoose = require('mongoose');
 
-// This function establishes a connection to the MongoDB database.
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+// This function establishes a connection to the MongoDB database with serverless connection caching.
 const connectDB = async () => {
-  try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      console.error('MongoDB Connection Error: MONGODB_URI is not set. Copy backend/.env.example to backend/.env and set MONGODB_URI.');
-      process.exit(1);
-    }
-
-    const conn = await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
-    // If the connection is successful, log a confirmation message to the console.
-    console.log(`MongoDB Atlas Connected Successfully`);
-    console.log(`Connected to: ${conn.connection.host}`);
-  } catch (error) {
-    // If an error occurs during the connection attempt, log the error message.
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    
-    // Exit the Node.js process with a "failure" code (1). This is important because
-    // if the app can't connect to the database, it can't function properly.
-    process.exit(1);
+  if (cached.conn) {
+    return cached.conn;
   }
+
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('MongoDB Connection Warning: MONGODB_URI is not set in environment variables.');
+    return null;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(uri).then((mongooseInstance) => {
+      console.log(`MongoDB Atlas Connected Successfully`);
+      return mongooseInstance;
+    }).catch((err) => {
+      console.error(`MongoDB Connection Error: ${err.message}`);
+      cached.promise = null;
+      throw err;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    console.error(`Failed to connect to MongoDB: ${error.message}`);
+  }
+
+  return cached.conn;
 };
 
 // Export the connectDB function so it can be imported and used in other files (like server.js).

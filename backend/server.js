@@ -87,6 +87,16 @@ require('./models/UserActivity');
 // Connect to MongoDB Atlas directly using the connectDB function
 connectDB();
 
+// Database connection middleware for serverless requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error('Database connection error in request middleware:', err);
+  }
+  next();
+});
+
 
 // Socket.IO setup
 const io = new Server(server, {
@@ -214,10 +224,13 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Socket.IO server ready for real-time updates`);
-});
+// Start server for local development; on Vercel, app is exported directly as serverless handler
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 8080;
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Socket.IO server ready for real-time updates`);
+  });
+}
 
-module.exports = server;
+module.exports = app;
