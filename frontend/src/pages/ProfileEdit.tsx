@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -140,22 +141,13 @@ const ProfileEdit = () => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const token = localStorage.getItem('auth-token');
-    const response = await fetch('/api/images/upload', {
-      method: 'POST',
+    const response = await api.post('/images/upload', formData, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-      body: formData,
+        'Content-Type': 'multipart/form-data',
+      }
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to upload avatar');
-    }
-
-    const data = await response.json();
-    return data.image.url;
+    return response.data.image.url;
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -183,34 +175,17 @@ const ProfileEdit = () => {
         }
       });
 
-      const token = localStorage.getItem('auth-token');
-      const response = await fetch(`/api/users/${user?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await api.put(`/users/${user?.id}`, updateData);
 
-      if (response.ok) {
+      if (response.status === 200) {
         toast.success('Profile updated successfully!');
         // Refresh user data
         window.location.reload();
-      } else {
-        let description = 'Unknown error';
-        try {
-          const error = await response.json();
-          description = error.message || (error.errors && error.errors[0]?.msg) || description;
-        } catch {
-          void 0;
-        }
-        toast.error('Failed to update profile', { description });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile update error:', error);
-      toast.error('Failed to update profile');
+      const description = error?.response?.data?.message || (error?.response?.data?.errors && error.response.data.errors[0]?.msg) || error.message || 'Unknown error';
+      toast.error('Failed to update profile', { description });
     } finally {
       setLoading(false);
     }

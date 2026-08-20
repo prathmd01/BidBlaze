@@ -13,6 +13,7 @@ import { ArrowLeft, Upload, ImageIcon, Trash2, Eye, LogOut, Plus } from 'lucide-
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
+import { apiBaseUrl } from '@/lib/api';
 
 // Helper function to format currency in rupees
 const formatCurrency = (amount: number) => {
@@ -89,7 +90,7 @@ const EditAuction = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('auth-token');
-        const response = await fetch(`http://localhost:8080/api/auctions/${auctionId}`, {
+        const response = await fetch(`${apiBaseUrl}/auctions/${auctionId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -296,8 +297,8 @@ const EditAuction = () => {
       // Determine if we're creating a new auction or updating an existing one
       const isNewAuction = auctionId === 'new';
       const url = isNewAuction
-        ? 'http://localhost:8080/api/auctions'
-        : `http://localhost:8080/api/auctions/${auctionId}`;
+        ? `${apiBaseUrl}/auctions`
+        : `${apiBaseUrl}/auctions/${auctionId}`;
 
       const method = isNewAuction ? 'POST' : 'PUT';
 

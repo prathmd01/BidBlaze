@@ -1,288 +1,85 @@
-# BidBlaze - Online Auction Platform
+# BidBlaze
 
-BidBlaze is a modern online auction platform built with the MERN stack (MongoDB, Express, React, Node.js). It provides a secure and real-time bidding experience with features like user authentication, payment processing, and image uploads.
+BidBlaze is a real-time online auction platform with a React/Vite client, Express/MongoDB API, Socket.IO bid updates, server-side Gemini chat, and a Python price-prediction service.
 
+## Architecture
 
-## 🛠️ Technology Stack
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Backend: Node.js, Express, JavaScript, Mongoose
+- Database: MongoDB (Atlas-compatible)
+- Real time: Socket.IO auction rooms
+- AI: Gemini REST API, called only from the backend
+- ML: FastAPI service using scikit-learn linear regression
 
-### Frontend Technologies
-- **React 18** - Modern JavaScript library for building user interfaces
-- **TypeScript** - Type-safe JavaScript for better development experience
-- **Vite** - Fast build tool and development server
-- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
-- **Shadcn/ui** - Beautiful and accessible UI components
-- **React Router DOM** - Client-side routing for React applications
-- **React Hook Form** - Performant forms with easy validation
-- **Zod** - TypeScript-first schema validation
-- **Lucide React** - Beautiful & consistent icon toolkit
-- **Sonner** - Toast notifications for React
-
-### Backend Technologies
-- **Node.js** - JavaScript runtime for server-side development
-- **Express.js** - Fast, unopinionated web framework for Node.js
-- **MongoDB** - NoSQL database for flexible data storage
-- **Mongoose** - MongoDB object modeling for Node.js
-- **JWT (JSON Web Tokens)** - Secure authentication and authorization
-- **bcryptjs** - Password hashing for security
-- **Multer** - File upload middleware for Express
-- **Express Validator** - Input validation and sanitization
-- **Helmet** - Security middleware for Express
-- **CORS** - Cross-Origin Resource Sharing middleware
-
-### Real-Time Communication
-- **Socket.io** - Real-time bidirectional communication
-- **WebSocket** - Protocol for real-time data exchange
-
-### Payment Integration
-- **Razorpay** - Payment gateway for Indian market
-- **Webhook Support** - Real-time payment status updates
-- **Signature Verification** - Secure payment validation
-
-### Cloud Services
-- **Cloudinary** - Cloud image and video management
-- **Image Upload/Processing** - Automatic image optimization
-
-### Development Tools
-- **Nodemon** - Auto-restart server during development
-- **ESLint** - Code linting and formatting
-- **Prettier** - Code formatter
-
-## 🎯 Perfect For
-
-- **Auction Houses**: Streamline operations with digital bidding
-- **Collectors**: Access rare items from anywhere in the world
-- **Sellers**: Reach global audience with secure payment processing
-- **Businesses**: Host corporate auctions and asset sales
-
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js** (v16 or higher) - [Download here](https://nodejs.org/)
-- **npm** (comes with Node.js)
-- **MongoDB** - [Install MongoDB](https://docs.mongodb.com/manual/installation/)
-- **Git** - [Download here](https://git-scm.com/)
-
-### Installation Steps
-
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/sattyam300/Bidblaze_ed.git
-cd Bidblaze_ed
-```
-
-## Setup Instructions
-
-### 1. Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file with the following variables:
-   ```
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret_key
-   PORT=8080
-   FRONTEND_URL=http://localhost:3000
-   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-   CLOUDINARY_API_KEY=your_cloudinary_api_key
-   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-   RAZORPAY_KEY_ID=your_razorpay_key_id
-   RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-   RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
-   ```
-
-4. Start the server:
-   ```bash
-   npm run dev
-   ```
-   
-   The server will run on `http://localhost:8080`
-
-### 2. Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Environment: copy `frontend/.env.example` to `frontend/.env` (or use the committed defaults). Set `VITE_RAZORPAY_KEY_ID` when testing payments.
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   
-   The frontend will run on `http://localhost:3000`
+The repository does not contain PostgreSQL, Prisma, or backend TypeScript.
 
 ## Features
 
-### Backend (`/backend`)
-- **Express Server**: RESTful API server with security features
-- **MongoDB Integration**: Database for storing users, auctions, bids, and transactions
-- **Authentication**: JWT-based user authentication and authorization
-- **WebSocket Support**: Real-time bidding and notifications
-- **Payment Processing**: Razorpay integration for secure payments
-- **Image Upload**: Cloudinary integration for image storage
+- JWT login/registration, bcrypt password hashes, and user/seller authorization
+- Seller-owned auction management, bid history, Cloudinary image routes, and Razorpay payment routes
+- Server-side bid validation and broadcasts after successful persistence
+- Auction-aware chat, recommendations, and final-price forecasts
 
-### Frontend (`/frontend`)
-- **React Application**: Modern React app built with TypeScript and Vite
-- **User Authentication**: Login, registration, and profile management
-- **Auction Management**: Create, browse, and bid on auctions
-- **Real-time Updates**: WebSocket integration for live bidding
-- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
-- **Form Validation**: Client-side validation with React Hook Form and Zod
+## ML / Machine Learning Component
 
-## API Endpoints
+**Model:** `sklearn.linear_model.LinearRegression`.
 
-### Authentication
-```bash
-POST /api/auth/register  # Register a new user
-POST /api/auth/login     # Login and get JWT token
-GET /api/auth/me         # Get current user profile
+**Purpose:** predict final auction price. `ml-service/train.py` trains on `ml-service/data/training_data.csv` using an 80/20 split (`random_state=42`) and saves `models/price_predictor.joblib`.
+
+**Features:** current highest bid, bidder count, hours remaining, encoded category, starting price, bid increment, and total bids. **Target:** `final_price`. Training prints MAE and R²; no accuracy claim is stored in the repository.
+
+Express derives features from MongoDB auction/bid records and calls the FastAPI `/predict` endpoint. `POST /api/predictions/:auctionId` returns the forecast, which the `PricePrediction` component displays. If the service is unavailable, the API labels its non-ML estimate `heuristic-fallback`.
+
+## Gemini AI Integration
+
+`POST /api/chat` is authenticated. It builds a prompt from active and ending-soon auctions plus bidding rules, then `backend/services/ai/llmProvider.js` calls Gemini `generateContent`. The default Gemini model is `gemini-1.5-flash`; configure `GEMINI_API_KEY`, `GEMINI_MODEL`, and `AI_PROVIDER=gemini` (or `auto`) on the backend only. Without a provider or after a provider error, a rule-based response is returned.
+
+## Real-Time Architecture
+
+Authenticated clients join `auction_<auctionId>` Socket.IO rooms. They submit bids via `POST /api/bids`; the API validates auction state, seller restriction, and minimum increment, saves the records, then emits `bidUpdate`. The server rejects `newBid` socket messages so a client cannot forge a displayed bid.
+
+## Environment variables
+
+Copy the safe examples and never commit real `.env` files.
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+Copy-Item frontend/.env.example frontend/.env
 ```
 
-### Auctions
-```bash
-GET /api/auctions        # Get all auctions
-GET /api/auctions/:id    # Get auction by ID
-POST /api/auctions       # Create a new auction
-PUT /api/auctions/:id    # Update an auction
-DELETE /api/auctions/:id # Delete an auction
+Backend requires `MONGODB_URI`, `JWT_SECRET`, and `FRONTEND_URL`; it also supports Razorpay, Cloudinary, `GEMINI_API_KEY`, `GEMINI_MODEL`, `AI_PROVIDER`, `ML_SERVICE_URL`, and `RECOMMENDATION_MODE`.
+
+Frontend uses public `VITE_API_URL` and `VITE_WS_URL` backend origins (without `/api`), plus optional public `VITE_RAZORPAY_KEY_ID`. Do not put private credentials in `VITE_*` variables.
+
+## Local setup
+
+```powershell
+cd backend; npm ci; Copy-Item .env.example .env; npm start
+cd frontend; npm ci; Copy-Item .env.example .env; npm run dev
+cd ml-service; python -m venv venv; .\venv\Scripts\Activate.ps1; pip install -r requirements.txt; python train.py; uvicorn app:app --port 5000
 ```
 
-### Bids
-```bash
-GET /api/bids            # Get all bids
-POST /api/bids           # Place a new bid
+## Deployment
+
+Deploy `frontend/` to Vercel as Vite with build command `npm run build`, output directory `dist`, and `VITE_API_URL`/`VITE_WS_URL` set to the public backend origin.
+
+Deploy `backend/` to a persistent Node host (for example Render or Railway), not Vercel: Socket.IO requires a durable server process. Use root `backend`, build command `npm ci`, start command `npm start`, and set all backend variables. Deploy `ml-service/` as a separate Python service and set `ML_SERVICE_URL` accordingly.
+
+## Verification
+
+```powershell
+cd frontend; npm ci; npm run build; npm run lint
+cd ../backend; npm ci; npm test -- --runInBand
 ```
 
-### Payments
-```bash
-POST /api/payments/create-order  # Create a payment order
-POST /api/payments/verify        # Verify payment
-```
+During this audit the frontend build passed; lint has warnings but no errors. The backend test command fails because no test files exist.
 
-### Images
-```bash
-POST /api/images/upload  # Upload an image
-```
+## Known limitations
 
-## Development
+- Bid writes are not wrapped in a MongoDB transaction; add transactional concurrency tests before high-volume use.
+- The ML dataset/model need representative-data review before business-critical use.
+- No production URLs are configured yet.
 
-### Running Both Services
+## GitHub description
 
-1. Start the backend (in one terminal):
-   ```bash
-   cd backend && npm run dev
-   ```
-
-2. Start the frontend (in another terminal):
-   ```bash
-   cd frontend && npm run dev
-   ```
-
-## Error Handling
-
-The application includes comprehensive error handling:
-
-- **Backend**: API errors, network issues, and invalid credentials
-- **Frontend**: Loading states, error messages, and retry functionality
-- **Image Fallbacks**: Placeholder images for failed product images
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the MIT License.
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
-- `POST /api/auth/logout` - User logout
-
-### Auctions
-- `GET /api/auctions` - Get all auctions
-- `GET /api/auctions/:id` - Get single auction
-- `POST /api/auctions` - Create auction (sellers)
-- `PUT /api/auctions/:id` - Update auction
-- `DELETE /api/auctions/:id` - Delete auction
-
-### Bidding
-- `POST /api/bids` - Place a bid
-- `GET /api/bids/auction/:auctionId` - Get auction bids
-- `GET /api/bids/my-bids` - Get user's bids
-- `GET /api/bids/winning` - Get winning bids
-
-### Payments
-- `POST /api/payments/create-order` - Create payment order
-- `POST /api/payments/verify` - Verify payment
-- `POST /api/payments/webhook` - Razorpay webhook
-
-### Images
-- `POST /api/images/upload` - Upload auction images
-- `DELETE /api/images/:id` - Delete image
-- `GET /api/images/auction/:auctionId` - Get auction images
-- `POST /api/images/upload` - Upload single image
-- `POST /api/images/upload-multiple` - Upload multiple images
-- `DELETE /api/images/:publicId` - Delete image
-
-## 🚀 Deployment
-
-### Vercel Deployment (Recommended)
-
-For the easiest deployment experience, we recommend using Vercel. Check out our comprehensive deployment guide:
-
-📖 **[Vercel Deployment Guide](./VERCEL_DEPLOYMENT.md)**
-
-### Quick Deployment Steps:
-
-1. **Deploy Backend to Vercel:**
-   ```bash
-   cd backend
-   vercel
-   ```
-
-2. **Deploy Frontend to Vercel:**
-   ```bash
-   cd frontend
-   vercel
-   ```
-
-3. **Set Environment Variables** in Vercel Dashboard
-
-4. **Connect to MongoDB Atlas** for cloud database
-
-### Alternative Deployment Options
-
-- **Heroku** - Platform as a Service
-- **Railway** - Modern deployment platform
-- **DigitalOcean App Platform** - Managed containers
-- **AWS** - Cloud infrastructure
-
-## 🌟 Why BidBlaze 2.0?
-
-BidBlaze 2.0 revolutionizes the auction experience by combining traditional auction excitement with modern technology. The platform ensures secure, transparent, and engaging bidding experiences while providing comprehensive tools for auction management. Whether you're a seasoned collector or new to auctions, BidBlaze 2.0 offers an intuitive and secure platform for buying and selling valuable items.
-
-Experience the future of auctions with BidBlaze 2.0 - where every bid counts and every transaction is secure! 🎉
-# RTAMS
+Real-time auction platform with Socket.IO bidding, JWT-authenticated users and sellers, MongoDB/Mongoose, Gemini auction assistant, and linear-regression price forecasts.

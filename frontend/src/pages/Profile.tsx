@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import axios from "axios";
+import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   AlertDialog,
@@ -114,7 +114,7 @@ const Profile = () => {
         });
         
         // Fetch user bids
-        const bidsResponse = await axios.get('/api/bids/my-bids');
+        const bidsResponse = await api.get('/bids/my-bids');
         
         if (bidsResponse.data && bidsResponse.data.bids) {
           const formattedBids = bidsResponse.data.bids.map(bid => ({
@@ -132,7 +132,7 @@ const Profile = () => {
         }
         
         // Fetch user orders (transactions)
-        const ordersResponse = await axios.get('/api/payments/my-transactions');
+        const ordersResponse = await api.get('/payments/my-transactions');
         
         if (ordersResponse.data && ordersResponse.data.transactions) {
           const formattedOrders = ordersResponse.data.transactions.map(transaction => ({
@@ -148,7 +148,7 @@ const Profile = () => {
         }
         
         // Fetch recommended auctions
-        const recommendedResponse = await axios.get('/api/auctions/recommended');
+        const recommendedResponse = await api.get('/auctions/recommended');
         
         if (recommendedResponse.data && recommendedResponse.data.auctions) {
           const formattedRecommended = recommendedResponse.data.auctions.map(auction => ({

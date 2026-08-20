@@ -196,3 +196,5 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO server ready for real-time updates`);
 });
+
+module.exports = server;

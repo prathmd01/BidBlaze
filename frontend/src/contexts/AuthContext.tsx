@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { apiBaseUrl } from '@/lib/api'
 
 interface User {
   id: string
@@ -51,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuth = async () => {
     try {
       const token = localStorage.getItem('auth-token')
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(`${apiBaseUrl}/auth/me`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
         },
@@ -73,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string, role: 'user' | 'seller' = 'user', phone?: string) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${apiBaseUrl}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string, role: 'user' | 'seller' = 'user') => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${apiBaseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       const token = localStorage.getItem('auth-token')
-      await fetch('http://localhost:8080/api/auth/logout', {
+      await fetch(`${apiBaseUrl}/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',

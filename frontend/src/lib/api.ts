@@ -4,8 +4,11 @@ import axios from "axios";
  * Shared Axios client — uses Vite proxy (/api → backend:8080).
  * Attaches JWT from localStorage when present.
  */
+export const backendUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "";
+export const apiBaseUrl = backendUrl ? `${backendUrl}/api` : "/api";
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: apiBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },

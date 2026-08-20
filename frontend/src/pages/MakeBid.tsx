@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -146,7 +146,7 @@ const MakeBid = () => {
 
       try {
         setIsLoading(true);
-        const res = await axios.get(`http://localhost:8080/api/auctions/${auctionId}`);
+        const res = await api.get(`/auctions/${auctionId}`);
         const a = res.data?.auction;
         if (a && a._id) {
           // Normalize to local shape expected by UI
@@ -293,8 +293,7 @@ const MakeBid = () => {
         setIsPlacingBid(false);
         return;
       }
-      const token = localStorage.getItem('auth-token');
-      if (!token) {
+      if (!localStorage.getItem('auth-token')) {
         toast.error("Please login again.");
         navigate('/auth');
         setIsPlacingBid(false);
@@ -307,11 +306,7 @@ const MakeBid = () => {
         return;
       }
 
-      const res = await axios.post(
-        'http://localhost:8080/api/bids',
-        { auction_id: auction.id, amount: bidAmount },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post('/bids', { auction_id: auction.id, amount: bidAmount });
 
       const updated = res.data?.auction;
 
@@ -325,15 +320,8 @@ const MakeBid = () => {
       // Check if auction has ended and if current user is the winner
       checkAuctionStatus();
 
-      if (socket && isConnected && auction && auction.id) {
-        const bidderId = user?.id || 'user-id';
-        socket.emit('newBid', {
-          auctionId: auction.id,
-          bidAmount,
-          bidderId,
-          bidderName: user?.full_name || 'Anonymous'
-        });
-      }
+      // POST /api/bids broadcasts bidUpdate only after server-side validation
+      // and persistence succeeds.
 
       toast.success("Bid placed successfully!");
       setShowBidForm(false);

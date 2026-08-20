@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 
 interface UserProfile {
   _id: string;
@@ -35,22 +36,11 @@ export const useUserProfile = (user: AuthUser | null) => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/users/${user._id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setProfile(data.user);
-      } catch (error) {
+        const response = await api.get(`/users/${user._id}`);
+        setProfile(response.data.user);
+      } catch (error: any) {
         console.error('Error fetching profile:', error);
-        setError(error instanceof Error ? error.message : 'Failed to fetch profile');
+        setError(error?.response?.data?.message || error.message || 'Failed to fetch profile');
       } finally {
         setLoading(false);
       }
@@ -66,25 +56,12 @@ export const useUserProfile = (user: AuthUser | null) => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/users/${user._id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setProfile(data.user);
-      return data.user;
-    } catch (error) {
+      const response = await api.put(`/users/${user._id}`, updates);
+      setProfile(response.data.user);
+      return response.data.user;
+    } catch (error: any) {
       console.error('Error updating profile:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update profile');
+      setError(error?.response?.data?.message || error.message || 'Failed to update profile');
       return null;
     } finally {
       setLoading(false);

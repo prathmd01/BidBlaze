@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import AuctionCard from "./AuctionCard";
 import { ArrowRight, ChevronLeft, ChevronRight, Filter, ListFilter, SlidersHorizontal } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/api";
 import { toast } from "sonner";
 
 // Categories - Aligned with backend enum values
@@ -31,7 +31,7 @@ const LiveAuctions = () => {
         setLoading(true);
         // Make sure the API endpoint matches the backend server port (8080)
         console.log('Fetching auctions from API...');
-        const response = await axios.get('http://localhost:8080/api/auctions', {
+        const response = await api.get('/auctions', {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'

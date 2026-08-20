@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { formatRupees } from '@/lib/currency';
 import { useSocket } from '@/contexts/SocketContext';
+import { apiBaseUrl } from '@/lib/api';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -119,7 +120,7 @@ const SellerDashboard = () => {
 
     for (const auction of auctionsList) {
       try {
-        const res = await fetch(`http://localhost:8080/api/bids/auction/${auction._id}`, {
+        const res = await fetch(`${apiBaseUrl}/bids/auction/${auction._id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -159,7 +160,7 @@ const SellerDashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth-token');
-      const response = await fetch('http://localhost:8080/api/auctions/seller', {
+      const response = await fetch(`${apiBaseUrl}/auctions/seller`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -201,7 +202,7 @@ const SellerDashboard = () => {
     setLoadingBids(true);
     try {
       const token = localStorage.getItem('auth-token');
-      const response = await fetch(`http://localhost:8080/api/bids/auction/${auctionId}`, {
+      const response = await fetch(`${apiBaseUrl}/bids/auction/${auctionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -265,7 +266,7 @@ const SellerDashboard = () => {
 
     try {
       const token = localStorage.getItem('auth-token');
-      const response = await fetch(`http://localhost:8080/api/auctions/${auctionId}`, {
+      const response = await fetch(`${apiBaseUrl}/auctions/${auctionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -313,7 +314,7 @@ const SellerDashboard = () => {
       });
 
       const token = localStorage.getItem('auth-token');
-      const response = await fetch('http://localhost:8080/api/images/upload-multiple', {
+      const response = await fetch(`${apiBaseUrl}/images/upload-multiple`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -474,7 +475,7 @@ const SellerDashboard = () => {
       };
 
       const token = localStorage.getItem('auth-token');
-      const response = await fetch('http://localhost:8080/api/auctions', {
+      const response = await fetch(`${apiBaseUrl}/auctions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -78,29 +79,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     setPaymentStatus('pending');
 
     try {
-      // Create order on backend
-      const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-      const response = await fetch(`${apiUrl}/api/payments/create-order`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          auction_id: auctionId,
-          amount: amount,
-          type: 'winning_payment'
-        })
+      // Create order on backend using api client
+      const response = await api.post('/payments/create-order', {
+        auction_id: auctionId,
+        amount: amount,
+        type: 'winning_payment'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create payment order');
-      }
-
-      const orderData = await response.json();
+      const orderData = response.data;
 
       // Initialize Razorpay
       const options = {
@@ -112,26 +98,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         order_id: orderData.order_id,
         handler: async function (response: RazorpayResponse) {
           try {
-            // Verify payment on backend
-            const verifyResponse = await fetch(`${apiUrl}/api/payments/verify`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                transaction_id: orderData.transaction_id
-              })
+            // Verify payment on backend using api client
+            const verifyResponse = await api.post('/payments/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              transaction_id: orderData.transaction_id
             });
 
-            if (!verifyResponse.ok) {
-              throw new Error('Payment verification failed');
-            }
-
-            const verifyData = await verifyResponse.json();
+            const verifyData = verifyResponse.data;
 
             setPaymentStatus('success');
             toast.success('Payment successful!');

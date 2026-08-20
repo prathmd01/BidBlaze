@@ -11,7 +11,7 @@ import UserProfileSkeleton from "@/components/UserProfileSkeleton";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "@/lib/api";
 
 // Import the AuctionParticipation interface
 interface AuctionParticipation {
@@ -62,12 +62,9 @@ const UserProfile = () => {
     const fetchUserBids = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('auth-token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
         const [bidsResponse, winningBidsResponse] = await Promise.all([
-          axios.get('/api/bids/my-bids', { headers }),
-          axios.get('/api/bids/winning', { headers })
+          api.get('/bids/my-bids'),
+          api.get('/bids/winning')
         ]);
 
         const participations: AuctionParticipation[] = [];
@@ -177,16 +174,7 @@ const UserProfile = () => {
   // Function to fetch bid history for a specific auction
   const fetchBidHistory = async (auctionId: string) => {
     try {
-      const token = localStorage.getItem('auth-token');
-      if (!token) {
-        toast.error('Authentication token not found');
-        return;
-      }
-
-      const auctionResponse = await axios.get(
-        `/api/auctions/${auctionId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const auctionResponse = await api.get(`/auctions/${auctionId}`);
 
       const auction = auctionResponse.data.auction;
       const isOrganizer = auction && auction.seller_id && auction.seller_id._id === user.id;
@@ -196,10 +184,7 @@ const UserProfile = () => {
         return;
       }
 
-      const response = await axios.get(
-        `/api/bids/auction/${auctionId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get(`/bids/auction/${auctionId}`);
 
       setBidHistory(response.data.bids);
       setSelectedAuctionId(auctionId);

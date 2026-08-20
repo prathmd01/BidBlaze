@@ -37,7 +37,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
 
     // Create socket connection with authentication
-    const newSocket = io('/', {
+    const newSocket = io(import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || undefined, {
       auth: {
         token: localStorage.getItem('auth-token') || ''
       },
@@ -101,16 +101,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
   };
 
-  const placeBid = (auctionId: string, amount: number, bidderId: string, bidderName: string) => {
-    if (socket && isConnected) {
-      socket.emit('newBid', {
-        auctionId,
-        bidAmount: amount,
-        bidderId,
-        bidderName
-      });
-    }
-  };
+  const placeBid = () => undefined;
 
   const sendComment = (auctionId: string, comment: string, userId: string, userName: string) => {
     if (socket && isConnected) {
