@@ -1,4 +1,3 @@
-// Import the mongoose library, which is an Object Data Modeling (ODM) library for MongoDB and Node.js.
 const mongoose = require('mongoose');
 
 let cached = global.mongoose;
@@ -9,29 +8,27 @@ if (!cached) {
 
 // This function establishes a connection to the MongoDB database with serverless connection caching.
 const connectDB = async () => {
-  if (cached.conn) {
-    return cached.conn;
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    console.error('MongoDB Connection Warning: MONGODB_URI is not set in environment variables.');
-    return null;
+    throw new Error('MONGODB_URI environment variable is not configured in Vercel settings.');
   }
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: true,
+      bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
+      connectTimeoutMS: 5000,
+      maxPoolSize: 10,
     };
 
     cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
-      console.log(`MongoDB Atlas Connected Successfully`);
+      console.log('MongoDB Atlas Connected Successfully');
       return mongooseInstance;
     }).catch((err) => {
-      console.error(`MongoDB Connection Error: ${err.message}`);
       cached.promise = null;
       throw err;
     });
@@ -41,7 +38,7 @@ const connectDB = async () => {
     cached.conn = await cached.promise;
   } catch (error) {
     cached.promise = null;
-    console.error(`Failed to connect to MongoDB: ${error.message}`);
+    throw error;
   }
 
   return cached.conn;

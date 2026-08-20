@@ -89,12 +89,20 @@ connectDB();
 
 // Database connection middleware for serverless requests
 app.use(async (req, res, next) => {
+  // Skip DB connection for health check
+  if (req.path === '/api/health') {
+    return next();
+  }
   try {
     await connectDB();
+    next();
   } catch (err) {
     console.error('Database connection error in request middleware:', err);
+    return res.status(500).json({
+      message: 'Database connection failed',
+      error: err.message
+    });
   }
-  next();
 });
 
 
