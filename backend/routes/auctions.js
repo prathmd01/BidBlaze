@@ -69,7 +69,11 @@ router.get('/', [
     const total = await Auction.countDocuments(filter);
 
     // Update auction statuses
-    auctions.forEach(auction => auction.updateStatus());
+    auctions.forEach((auction) => {
+      if (auction && typeof auction.updateStatus === 'function') {
+        auction.updateStatus();
+      }
+    });
 
     res.json({
       auctions,

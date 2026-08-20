@@ -20,7 +20,14 @@ const connectDB = async () => {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(uri).then((mongooseInstance) => {
+    const opts = {
+      bufferCommands: true,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    };
+
+    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
       console.log(`MongoDB Atlas Connected Successfully`);
       return mongooseInstance;
     }).catch((err) => {
